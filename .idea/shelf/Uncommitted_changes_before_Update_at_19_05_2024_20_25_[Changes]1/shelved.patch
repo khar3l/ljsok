@@ -1,0 +1,599 @@
+Index: main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.py b/main.py
+--- a/main.py	
++++ b/main.py	
+@@ -1,0 +1,202 @@
++import math
++import numpy as np
++import time
++
++from particleclass import Particle
++
++# глобальные переменные
++N = int(64)  # количество частиц
++Vmax = float(20.0)  # максимальная скорость частицы
++dt = float(0.001)  # тик
++Leng = int(10)  # длина коробки
++half = Leng / 2  # половина длины коробки
++
++# opens files with data
++impt = open('imp.txt', 'w')
++kint = open('kin.txt', 'w')
++pott = open('pot.txt', 'w')
++mect = open('mec.txt', 'w')
++maxwt = open('maxw.txt', 'w')
++wayt = open('way.txt', 'w')
++
++
++coord = open('coord.txt', 'w')
++
++
++def cell_gen(particles):
++    # cell generation
++    n = 0
++    particle_is_even = True
++    edge = math.ceil(np.cbrt(N))
++    dl = Leng / edge
++    dl_half = dl / 2
++    for i in np.arange(edge):
++        for j in np.arange(edge):
++            for k in np.arange(edge):
++                c = dl_half + np.array([i, j, k]) * dl
++                if particle_is_even:
++                    v = np.random.uniform(-Vmax, Vmax, (3))
++                    if (n == N - 1):
++                        v = np.zeros(3)
++                        particles.append(Particle(c, v))
++                        return 0
++                    particles.append(Particle(c, v))
++                    particle_is_even = False
++                    n += 1
++                else:
++                    particles.append(Particle(c, -v))
++                    if (n == N - 1):
++                        return 0
++                    particle_is_even = True
++                    n += 1
++
++
++def null_axel(particles):
++    # nullifies all accelerations
++    for i in np.arange(N):
++        particles[i].a = np.zeros(3)
++
++
++def axel(part, part1):
++    # calculates the forces of interaction between these particles
++    # and changes their accelerations
++    vect_r = Particle.vec_to_virtual_copy(part.c, part1.c)
++    abs_r = np.linalg.norm(vect_r)
++    ac = 24 * (2 * np.power(abs_r, -14) - np.power(abs_r, -8)) * vect_r
++    part.a -= ac
++    part1.a += ac
++
++
++def calc_axel(particles):
++    # calculates the accelerations of all particles and changes them
++    null_axel(particles)
++    for i in np.arange(N - 1):
++        for j in np.arange(i + 1, N):
++            axel(particles[i], particles[j])
++
++
++def first_move(particles):
++    # moves all particles for the first time
++    calc_axel(particles)
++    for i in np.arange(N):
++        Particle.first_move(particles[i])
++
++
++def move(particles):
++    # moves all particles
++    calc_axel(particles)
++    for i in np.arange(N):
++        Particle.move(particles[i])
++
++
++def potentwo(part, part1):
++    # calculates the potential energy of the interaction of two particles
++    vect_r = Particle.vec_to_virtual_copy(part.c, part1.c)
++    abs_r = np.linalg.norm(vect_r)
++    u = 4 * (np.power(abs_r, -12) - np.power(abs_r, -6))
++    return u
++
++
++def impulse(particles):
++    # calculates the total momentum of the system
++    summ = np.zeros(3)
++    for i in np.arange(N):
++        summ += particles[i].v
++    impt.write(np.array2string(summ) + '\n')
++
++
++def poten_eng(particles):
++    # calculates the potential energy of the interaction of all particles
++    pot = 0.0
++    for i in np.arange(N - 1):
++        for j in np.arange(i + 1, N):
++            pot += potentwo(particles[i], particles[j])
++    pott.write(str(pot) + '\n')
++    return pot
++
++
++def kinetic_eng(particles):
++    # calculates the total kinetic energy of the system
++    kin = 0.0
++    for i in np.arange(N):
++        kin += (np.linalg.norm(particles[i].v) ** 2) / 2
++    kint.write(str(kin) + '\n')
++    return kin
++
++
++def energy(particles):
++    # calculates the total mechanical energy of the system
++    pot = poten_eng(particles)
++    kin = kinetic_eng(particles)
++    summ = pot + kin
++    mect.write(str(summ) + '\n')
++
++
++def maxwellx(particles):
++    list = np.zeros(N)
++    for i in np.arange(N):
++        list[i] = particles[i].v[0]
++    list = np.sort(list)
++    for i in np.arange(N):
++        maxwt.write(str(list[i]) + '\n')
++
++
++def average_way(particles):
++    summ = 0.0
++    for i in np.arange(N):
++        summ += (np.linalg.norm(particles[i].way)) ** 2
++    summ = summ / N
++    wayt.write(str(summ) + '\n')
++
++
++def display_coordinates(particles):
++    coord.write(str(N) + '\n')
++    coord.write('Lattice="10.0 0.0 0.0 0.0 10.0 0.0 0.0 0.0 10.0" Properties=S:1:pos:R:3' + '\n')
++    for i in np.arange(N):
++        for j in np.arange(3):
++            coord.write(str(particles[i].c[j]) + ' ')
++        coord.write('\n')
++
++
++def timego(particles, tick):
++    "starts the simulation"
++    # display_coordinates(particles)
++    print(0, '%')
++    first_move(particles)
++    display_coordinates(particles)
++    impulse(particles)
++    energy(particles)
++    average_way(particles)
++    for i in np.arange(1, tick):
++        move(particles)
++        display_coordinates(particles)
++        # impulse(particles) commented out because momentum is maintained
++        # energy(particles) commented out because energy is maintained
++        average_way(particles)
++        if i % (tick // 20) == 0:
++            print(i * 100 / tick, '%')
++    maxwellx(particles)
++    print(100, '%')
++
++
++def main():
++    t = int(500)  # ticks
++    start = time.time()  # точка отсчета времени
++    particles = []  # particle array
++    cell_gen(particles)  # генерация сеткой
++    timego(particles, t)
++    end = time.time() - start  # собственно время работы программы
++    print(end)  # вывод времени
++
++
++if __name__ == "__main__":
++    main()
++
++# close files with data
++impt.close()
++kint.close()
++mect.close()
++pott.close()
++maxwt.close()
++wayt.close()
++coord.close()
+\ No newline at end of file
+Index: repa.py
+===================================================================
+diff --git a/repa.py b/repa.py
+new file mode 100644
+--- /dev/null	
++++ b/repa.py	
+@@ -0,0 +1,29 @@
++import numpy as np
++
++# Чтение данных из файла
++y = np.loadtxt('way.txt')
++
++# Преобразование данных
++y = np.sqrt(y * 64)  # Преобразование в средний квадрат перемещения частиц
++
++# Создание оси времени
++x = np.arange(1, len(y) + 1)
++
++# Линейная аппроксимация
++p = np.polyfit(x, y, 1)
++D_1 = p[0] / 6  # Коэффициент диффузии по первому способу
++lambda_1 = (3 * D_1) / 1  # Длина свободного пробега по первому способу
++
++# Аппроксимация для малых времен
++p_small = np.polyfit(x[:10], y[:10], 2)
++D_2 = np.sqrt(p_small[0])  # Коэффициент диффузии по второму способу
++lambda_2 = D_2  # Длина свободного пробега по второму способу
++
++# Вывод результатов
++print("Результаты по первому способу:")
++print(f"Коэффициент диффузии (D): {D_1:.2f}")
++print(f"Длина свободного пробега (λ): {lambda_1:.2f}")
++
++print("\nРезультаты по второму способу:")
++print(f"Коэффициент диффузии (D): {D_2:.2f}")
++print(f"Длина свободного пробега (λ): {lambda_2:.2f}")
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"72548519-b8f0-42d4-b51c-9497f5006b9e\" name=\"Changes\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/main.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/main.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"ProjectColorInfo\"><![CDATA[{\r\n  \"associatedIndex\": 5\r\n}]]></component>\r\n  <component name=\"ProjectId\" id=\"2gO2jCaZQVYz5InaLYzOZHkzOgc\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"git-widget-placeholder\": \"master\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RunManager\">\r\n    <configuration name=\"main\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ljsok\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/main.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-python-sdk-babbdf50b680-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.15989.155\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"72548519-b8f0-42d4-b51c-9497f5006b9e\" name=\"Changes\" comment=\"\" />\r\n      <created>1715554435543</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1715554435543</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/main.py</url>\r\n          <line>8</line>\r\n          <option name=\"timeStamp\" value=\"1\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	
++++ b/.idea/workspace.xml	
+@@ -1,20 +1,57 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
++  <component name="AutoImportSettings">
++    <option name="autoReloadType" value="SELECTIVE" />
++  </component>
+   <component name="ChangeListManager">
+     <list default="true" id="72548519-b8f0-42d4-b51c-9497f5006b9e" name="Changes" comment="">
++      <change afterPath="$PROJECT_DIR$/repa.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/coord.txt" beforeDir="false" afterPath="$PROJECT_DIR$/coord.txt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/energy.py" beforeDir="false" afterPath="$PROJECT_DIR$/energy.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/imp.txt" beforeDir="false" afterPath="$PROJECT_DIR$/imp.txt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/kin.txt" beforeDir="false" afterPath="$PROJECT_DIR$/kin.txt" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/maxw.txt" beforeDir="false" afterPath="$PROJECT_DIR$/maxw.txt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/maxwell.py" beforeDir="false" afterPath="$PROJECT_DIR$/maxwell.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/mec.txt" beforeDir="false" afterPath="$PROJECT_DIR$/mec.txt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/particleclass.py" beforeDir="false" afterPath="$PROJECT_DIR$/particleclass.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/pot.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pot.txt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/velocity.py" beforeDir="false" afterPath="$PROJECT_DIR$/velocity.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/way.py" beforeDir="false" afterPath="$PROJECT_DIR$/way.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/way.txt" beforeDir="false" afterPath="$PROJECT_DIR$/way.txt" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+     <option name="LAST_RESOLUTION" value="IGNORE" />
++  </component>
++  <component name="FileTemplateManagerImpl">
++    <option name="RECENT_TEMPLATES">
++      <list>
++        <option value="Python Script" />
++      </list>
++    </option>
+   </component>
+   <component name="Git.Settings">
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+   </component>
+-  <component name="ProjectColorInfo"><![CDATA[{
+-  "associatedIndex": 5
+-}]]></component>
++  <component name="GitHubPullRequestSearchHistory">{
++  &quot;lastFilter&quot;: {
++    &quot;state&quot;: &quot;OPEN&quot;,
++    &quot;assignee&quot;: &quot;khar3l&quot;
++  }
++}</component>
++  <component name="GithubPullRequestsUISettings">{
++  &quot;selectedUrlAndAccountId&quot;: {
++    &quot;url&quot;: &quot;https://github.com/khar3l/ljsok.git&quot;,
++    &quot;accountId&quot;: &quot;17c0d74f-a824-45ad-af06-0b490219452d&quot;
++  }
++}</component>
++  <component name="ProjectColorInfo">{
++  &quot;associatedIndex&quot;: 5
++}</component>
+   <component name="ProjectId" id="2gO2jCaZQVYz5InaLYzOZHkzOgc" />
+   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+   <component name="ProjectViewState">
+@@ -23,10 +60,34 @@
+   </component>
+   <component name="PropertiesComponent"><![CDATA[{
+   "keyToString": {
++    "Python.activate_this.executor": "Run",
++    "Python.energy.executor": "Run",
++    "Python.energy2.executor": "Run",
++    "Python.jkkkk.executor": "Run",
++    "Python.main.executor": "Run",
++    "Python.maxwell.executor": "Run",
++    "Python.particleclass.executor": "Run",
++    "Python.re.executor": "Debug",
++    "Python.repa.executor": "Run",
++    "Python.scratch.executor": "Run",
++    "Python.velocity.executor": "Run",
++    "Python.way.executor": "Run",
+     "RunOnceActivity.ShowReadmeOnStart": "true",
+-    "git-widget-placeholder": "master"
++    "git-widget-placeholder": "master",
++    "last_opened_file_path": "C:/Users/zorro/PycharmProjects/ljsok",
++    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
++  },
++  "keyToStringList": {
++    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
++      "Python"
++    ]
+   }
+ }]]></component>
++  <component name="RecentsManager">
++    <key name="CopyFile.RECENT_KEYS">
++      <recent name="C:\Users\zorro\PycharmProjects\ljsok" />
++    </key>
++  </component>
+   <component name="RunManager">
+     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+       <module name="ljsok" />
+@@ -69,15 +130,4 @@
+     </task>
+     <servers />
+   </component>
+-  <component name="XDebuggerManager">
+-    <breakpoint-manager>
+-      <breakpoints>
+-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+-          <url>file://$PROJECT_DIR$/main.py</url>
+-          <line>8</line>
+-          <option name="timeStamp" value="1" />
+-        </line-breakpoint>
+-      </breakpoints>
+-    </breakpoint-manager>
+-  </component>
+ </project>
+\ No newline at end of file
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ProjectRootManager\" version=\"2\" project-jdk-name=\"Python 3.12 (ljsok)\" project-jdk-type=\"Python SDK\" />\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+--- a/.idea/misc.xml	
++++ b/.idea/misc.xml	
+@@ -1,4 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
++  <component name="Black">
++    <option name="sdkName" value="Python 3.12 (ljsok)" />
++  </component>
+   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (ljsok)" project-jdk-type="Python SDK" />
+ </project>
+\ No newline at end of file
+Index: maxwell.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/maxwell.py b/maxwell.py
+--- a/maxwell.py	
++++ b/maxwell.py	
+@@ -1,0 +1,39 @@
++import numpy as np
++import matplotlib.pyplot as plt
++from scipy.stats import maxwell
++
++# Load data from the file
++v_x = np.loadtxt('maxw.txt')
++
++# Calculate the total kinetic energy
++T = np.sum(v_x ** 2)
++
++# Calculate the number of elements in v_x
++N = v_x.size
++
++# Calculate the temperature
++temperature = T / (3 * N)
++
++# Plot the histogram
++plt.figure(figsize=(8, 6))
++plt.hist(v_x, bins='auto', density=True, color='skyblue', edgecolor='black', alpha=0.7, label='Experimental Data')
++
++# Generate theoretical Maxwell-Boltzmann distribution
++v = np.linspace(np.min(v_x), np.max(v_x), 1000)
++theoretical_pdf = maxwell.pdf(v, scale=np.sqrt(temperature))
++plt.plot(v, theoretical_pdf, 'r-', lw=2, label='Theoretical Maxwell-Boltzmann Distribution')
++
++# Add labels and titles
++plt.title('Distribution of Particle Velocity Projections along the X-axis', fontsize=16)
++plt.xlabel('Particle Velocity along X-axis', fontsize=14)
++plt.ylabel('Probability Density', fontsize=14)
++plt.grid(True)
++
++# Add average kinetic energy to the plot
++plt.text(0.95, 0.95, f'Average Kinetic Energy (T/N) = {T/N:.2f}', ha='right', va='top', transform=plt.gca().transAxes, fontsize=12)
++
++# Add legend
++plt.legend()
++
++# Show the plot
++plt.show()
+Index: way.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/way.py b/way.py
+--- a/way.py	
++++ b/way.py	
+@@ -1,0 +1,30 @@
++import numpy as np
++import matplotlib.pyplot as plt
++
++# Чтение данных из файла
++y = np.loadtxt('way.txt')
++
++# Преобразование данных
++y = np.sqrt(y * 64)  # Преобразование в средний квадрат перемещения частиц
++
++# Создание оси времени
++x = np.arange(1, len(y) + 1)
++
++# Построение графика
++plt.figure(figsize=(10, 6))  # Установка размера графика
++plt.plot(x, y, 'o-', color='black', label='Среднее перемещение частиц')  # Построение точечного графика
++plt.xlabel('Время работы программы, тиков', fontsize=14)  # Наименование оси x
++plt.ylabel('Средний квадрат перемещения частиц, у.е.$^2$', fontsize=14)  # Наименование оси y
++plt.title('График зависимости перемещения частиц от времени', fontsize=16)  # Заголовок графика
++plt.grid(True)  # Включение сетки
++plt.legend(loc='best', fontsize=12)  # Вывод легенды
++
++# Построение линейной аппроксимации
++p = np.polyfit(x, y, 1)
++y_fit = np.polyval(p, x)
++plt.plot(x, y_fit, color='firebrick', linestyle='-', label='Линейная аппроксимация')  # Построение линии аппроксимации
++plt.legend(loc='best', fontsize=12)  # Обновление легенды
++
++# Отображение графика
++plt.tight_layout()  # Улучшение отображения
++plt.show()
+\ No newline at end of file
+Index: velocity.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/velocity.py b/velocity.py
+--- a/velocity.py	
++++ b/velocity.py	
+@@ -1,0 +1,14 @@
++import numpy as np
++
++y = np.array([])
++f = open('maxw.txt')
++for line in f:
++    y = np.append(y, abs((float(line))))
++f.close()
++
++v_x = y
++N = len(v_x)
++
++V = np.sum(v_x)*np.sqrt(3)/N
++
++print(V)
+Index: particleclass.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/particleclass.py b/particleclass.py
+--- a/particleclass.py	
++++ b/particleclass.py	
+@@ -1,0 +1,50 @@
++import numpy as np
++
++dt = float(0.001)  # тик
++Leng = int(10)  # длина коробки
++half = Leng / 2  # половина длины коробки
++
++
++class Particle:
++    """Particle class"""
++
++    def __init__(self, c=np.zeros(3), v=np.zeros(3), a=np.zeros(3), lc=np.zeros(3), way=np.zeros(3)):
++        self.c = c  # coordinate
++        self.v = v  # velocity
++        self.a = a  # acceleration
++        self.lc = lc  # last coordinate
++        self.way = way  # the movement of a particle from the beginning of time
++
++    def to_border(c):
++        # returns the particle to the borders of the box
++        for i in np.arange(3):
++            while ((c[i] >= Leng) or (c[i] < 0)):
++                c[i] %= Leng
++
++    def vec_to_virtual_copy(partc, part1c):
++        # returns a vector directed to a virtual copy of particle "part1"
++        vect_r = part1c - partc
++        for i in np.arange(3):
++            if (vect_r[i] > half):
++                vect_r[i] -= Leng
++            if (vect_r[i] < -half):
++                vect_r[i] += Leng
++        return vect_r
++
++    def first_move(self):
++        # moves the particle for the first time
++        self.lc = np.zeros(3) + self.c
++        delta_r = dt * (self.v) + 0.5 * (self.a) * dt ** 2
++        self.way += delta_r
++        self.c += delta_r
++        Particle.to_border(self.c)
++        self.v += dt * (self.a)
++
++    def move(self):
++        # moves the particle using the Verlet scheme
++        delta_r = Particle.vec_to_virtual_copy(self.lc, self.c) + self.a * dt ** 2
++        self.lc = np.zeros(3) + self.c
++        self.way += delta_r
++        self.c += delta_r
++        Particle.to_border(self.c)
++        self.v += self.a * dt
+\ No newline at end of file
+Index: energy.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/energy.py b/energy.py
+--- a/energy.py	
++++ b/energy.py	
+@@ -1,0 +1,28 @@
++import numpy as np
++import matplotlib.pyplot as plt
++
++# Загрузка данных из файлов
++ymec = np.loadtxt('mec.txt')
++ypot = np.loadtxt('pot.txt')
++ykin = np.loadtxt('kin.txt')
++x = np.arange(len(ymec))
++
++# Создание графика
++plt.figure(figsize=(10, 6))
++plt.plot(x, ymec, 'o-', color='black', label='Полная механическая энергия')
++plt.plot(x, ykin, 'o-', color='red', label='Кинетическая энергия частиц')
++plt.plot(x, ypot, 'o-', color='green', label='Потенциальная энергия частиц')
++
++# Настройка подписей осей и заголовка графика
++plt.xlabel('Время работы программы, тиков', fontsize=14)
++plt.ylabel('Энергия, у.е.', fontsize=14)
++plt.title('График зависимости разных видов энергии от времени', fontsize=16)
++
++# Включение сетки
++plt.grid(True)
++
++# Добавление легенды
++plt.legend(loc='best', fontsize=12)
++
++# Отображение графика
++plt.show()
