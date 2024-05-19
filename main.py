@@ -8,7 +8,7 @@ from particleclass import Particle
 N = int(64)  # количество частиц
 Vmax = float(20.0)  # максимальная скорость частицы
 dt = float(0.001)  # тик
-Leng = int(4)  # длина коробки
+Leng = int(10)  # длина коробки
 half = Leng / 2  # половина длины коробки
 
 # opens files with data
@@ -180,7 +180,7 @@ def timego(particles, tick):
 
 
 def main():
-    t = int(50000)  # ticks
+    t = int(500)  # ticks
     start = time.time()  # точка отсчета времени
     particles = []  # particle array
     cell_gen(particles)  # генерация сеткой
