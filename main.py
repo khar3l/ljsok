@@ -170,8 +170,8 @@ def timego(particles, tick):
     for i in np.arange(1, tick):
         move(particles)
         display_coordinates(particles)
-        # impulse(particles) commented out because momentum is maintained
-        # energy(particles) commented out because energy is maintained
+        impulse(particles)
+        energy(particles)
         average_way(particles)
         if i % (tick // 20) == 0:
             print(i * 100 / tick, '%')
