@@ -12,7 +12,7 @@ start_tick = 50
 
 # Создание графика
 plt.figure(figsize=(10, 6))
-plt.plot(x[start_tick:], ymec[start_tick:], 'o', color='black', label='Полная механическая энергия')
+plt.plot(x[start_tick:], ymec[start_tick:], linestyle='-', color='black', label='Полная механическая энергия')
 
 # Настройка подписей осей и заголовка графика
 plt.xlabel('Время работы программы, тиков', fontsize=14)

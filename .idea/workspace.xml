@@ -5,13 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72548519-b8f0-42d4-b51c-9497f5006b9e" name="Changes" comment="правки">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/coord.txt" beforeDir="false" afterPath="$PROJECT_DIR$/coord.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/energy2.py" beforeDir="false" afterPath="$PROJECT_DIR$/energy2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/imp.txt" beforeDir="false" afterPath="$PROJECT_DIR$/imp.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kin.txt" beforeDir="false" afterPath="$PROJECT_DIR$/kin.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/maxw.txt" beforeDir="false" afterPath="$PROJECT_DIR$/maxw.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/maxwell.py" beforeDir="false" afterPath="$PROJECT_DIR$/maxwell.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mec.txt" beforeDir="false" afterPath="$PROJECT_DIR$/mec.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pot.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pot.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/way.py" beforeDir="false" afterPath="$PROJECT_DIR$/way.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/way.txt" beforeDir="false" afterPath="$PROJECT_DIR$/way.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -167,7 +171,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716145517477</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="правки">
+      <option name="closed" value="true" />
+      <created>1716145774967</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1716145774967</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
